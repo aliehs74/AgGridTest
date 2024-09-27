@@ -1,9 +1,8 @@
-import React from "react";
 import { Button, Row, Tooltip } from "antd";
-import { FaAngellist } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
+import { ButtonProps } from "./GridMainTypes";
 
-export default ({ button }) => {
+const ActionsRenderer = ({ button }: { button: ButtonProps }) => {
   return (
     <Row>
       <Tooltip title="حذف">
@@ -18,3 +17,5 @@ export default ({ button }) => {
     </Row>
   );
 };
+
+export default ActionsRenderer;

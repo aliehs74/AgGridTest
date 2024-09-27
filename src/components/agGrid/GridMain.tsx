@@ -1,17 +1,26 @@
 import "ag-grid-community/styles/ag-grid.css"; // Mandatory CSS required by the Data Grid
 import "ag-grid-community/styles/ag-theme-quartz.css"; // Optional Theme applied to the Data Grid
 import { AgGridReact } from "ag-grid-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dataGrid from "../../assets/Datagrid.json";
-import GridOverlay from "./GridOverlay";
 import ActionsRenderer from "./ActionsRenderer";
+import { additionalColumnDefs, ButtonProps, ColumnDef } from "./GridMainTypes";
+import { ColumnMenuTab, SelectionOptions } from "ag-grid-community";
+import { Row } from "antd";
 
-// Create new GridExample1 component
-const GridExample1 = () => {
+// Create new GridMain component
+const GridMain = () => {
   console.log("x=", dataGrid.Entity);
-  const gridRef = useRef();
+  const gridRef = useRef<AgGridReact>(null);
 
-  const [columnDefs, setColumnDefs] = useState([]);
+  const [columnDefs, setColumnDefs] = useState<ColumnDef[]>([]);
+
+  const button = useMemo(() => {
+    return {
+      key: 1,
+      onClick: (data: any) => console.log(data),
+    };
+  }, []);
 
   useEffect(() => {
     const fetchColumnDefs = dataGrid.Entity.columns.map((x) => {
@@ -19,7 +28,7 @@ const GridExample1 = () => {
         field: x.field,
         headerName: x.title,
         filter: "agNumberColumnFilter",
-        minWidth: x.width,
+        minWidth: x.width ? x.width : 200,
         cellClass: x.cellClass,
         sortable: x.sortable,
         cellStyle: {
@@ -31,23 +40,42 @@ const GridExample1 = () => {
       };
     });
 
-    const additionalColumnDefs = [
+    const additionalColumnDefs: additionalColumnDefs[] = [
       {
         field: "actions",
         headerName: "عملیات",
         minWidth: 100,
         cellClass: "custom-class",
-        cellRenderer: ActionsRenderer,
+        cellRenderer: ActionsRenderer as ({
+          button,
+        }: {
+          button: ButtonProps;
+        }) => JSX.Element,
         cellRendererParams: { button: button },
         filter: false,
         sortable: false,
         resizable: false,
+        cellStyle: {
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          visibility: "visible",
+        },
       },
     ];
 
     //concat both columnDefs
-    setColumnDefs(fetchColumnDefs.concat(additionalColumnDefs));
-  }, [dataGrid]);
+    // setColumnDefs(fetchColumnDefs.concat(additionalColumnDefs));
+
+    const transformedAdditionalColumnDefs = additionalColumnDefs.map(
+      (columnDef) => ({
+        ...columnDef,
+        filter: columnDef.filter.toString(),
+      })
+    );
+
+    setColumnDefs(fetchColumnDefs.concat(transformedAdditionalColumnDefs));
+  }, [button]); // it can depend on dataGrid when its fetch
 
   const defaultColDef = useMemo(() => {
     return {
@@ -55,15 +83,16 @@ const GridExample1 = () => {
       floatingFilter: dataGrid.Entity.EnableFilterBar ? true : false,
       resizable: true,
       flex: 1,
-      filter: true,
       editable: false,
-      menuTabs: ["filterMenuTab"],
-      cellClass: "grid-cell-center",
+      menuTabs: ["generalMenuTab", "filterMenuTab", "columnsMenuTab"].map(
+        (tab) => tab as ColumnMenuTab
+      ),
+      cellClass: ["grid-cell-center", "datagrid-cell"],
       width: 200,
     };
   }, []);
 
-  const [rowData, setRowData] = useState([
+  const rowData = [
     {
       InventoryModifyNumber: "InventoryModifyNumber",
       ProductCode: "ProductCode",
@@ -140,22 +169,19 @@ const GridExample1 = () => {
       ProductRealQtyInEnd: "ProductRealQtyInEnd3",
       CreatedOn: "CreatedOn3",
     },
-  ]);
+  ];
 
-  const selection = {
+  const selection: SelectionOptions = {
     mode: dataGrid.Entity.singleSelect ? "singleRow" : "multiRow",
     headerCheckbox: false,
-  };
-
-  const button = {
-    key: 1,
-    onClick: (data) => console.log(data),
   };
 
   // Container: Defines the grid's theme & dimensions.
   return (
     <div
-      className={`ag-theme-quartz-dark overflow-auto w-[${dataGrid.Entity.WindowWidth}px] h-[${dataGrid.Entity.WindowHeight}px]`}
+      // className={`ag-theme-quartz-dark overflow-auto w-[${dataGrid.Entity.WindowWidth}px] h-[${dataGrid.Entity.WindowHeight}px]`}
+
+      className="w-[800px] h-[400px] ag-theme-quartz-dark overflow-auto "
     >
       <AgGridReact
         rowData={rowData}
@@ -166,7 +192,6 @@ const GridExample1 = () => {
         paginationPageSize={10}
         paginationPageSizeSelector={[10, 25, 50]}
         animateRows={true}
-        enableClickSelection={true}
         // onSelectionChanged={function}
         // suppressRowClickSelection={false}
         onRowClicked={(e) => console.log("row clicked", e.rowIndex)}
@@ -176,4 +201,4 @@ const GridExample1 = () => {
   );
 };
 
-export default GridExample1;
+export default GridMain;
